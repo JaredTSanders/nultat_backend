@@ -1,4 +1,4 @@
-module backend
+module github.com/JaredTSanders/nultat_backend
 
 go 1.15
 
@@ -26,4 +26,5 @@ require (
 	k8s.io/client-go v11.0.0+incompatible // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/utils v0.0.0-20201110183641-67b214c5f920 // indirect
+	github.com/JaredTSanders/nultat_backend
 )
