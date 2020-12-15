@@ -2,7 +2,8 @@ package models
 
 import (
 	"fmt"
-	u "go-contacts/utils"
+
+	u "github.com/JaredTSanders/nultat_backend/utils"
 
 	"github.com/jinzhu/gorm"
 )

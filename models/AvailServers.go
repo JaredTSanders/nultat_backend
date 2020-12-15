@@ -2,7 +2,8 @@ package models
 
 import (
 	"fmt"
-	u "go-contacts/utils"
+
+	u "github.com/JaredTSanders/nultat_backend/utils"
 
 	"github.com/jinzhu/gorm"
 )
@@ -11,6 +12,7 @@ type AvailServer struct {
 	gorm.Model
 	Name     string `json:"name"`
 	ServerID string `json:"serverID"`
+	UserId   uint
 }
 
 func (availServer *AvailServer) Validate() (map[string]interface{}, bool) {
@@ -54,14 +56,14 @@ func GetAvailServer(id uint) *AvailServer {
 	return availServer
 }
 
-func GetAvailServers(user uint) []*AvailServer {
+func GetAvailServers() []*AvailServer {
 
-	availServers := make([]*AvailServer, 0)
-	err := GetDB().Table("availServers").Where("user_id = ?", user).Find(&availServers).Error
+	availServer := make([]*AvailServer, 0)
+	err := GetDB().Table("avail_servers").Find(&availServer).Error
 	if err != nil {
 		fmt.Println(err)
 		return nil
 	}
 
-	return availServers
+	return availServer
 }

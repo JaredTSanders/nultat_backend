@@ -1,8 +1,9 @@
 package app
 
 import (
-	u "go-contacts/utils"
 	"net/http"
+
+	u "github.com/JaredTSanders/nultat_backend/utils"
 )
 
 var NotFoundHandler = func(next http.Handler) http.Handler {

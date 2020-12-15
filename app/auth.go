@@ -3,11 +3,12 @@ package app
 import (
 	"context"
 	"fmt"
-	"go-contacts/models"
-	u "go-contacts/utils"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/JaredTSanders/nultat_backend/models"
+	u "github.com/JaredTSanders/nultat_backend/utils"
 
 	"github.com/dgrijalva/jwt-go"
 )

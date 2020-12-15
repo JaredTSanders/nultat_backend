@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/JaredTSanders/nultat_backend/app"
+	"github.com/JaredTSanders/nultat_backend/controllers"
 	"github.com/gorilla/mux"
 )
 
@@ -14,7 +16,7 @@ func main() {
 
 	router.HandleFunc("/api/user/new", controllers.CreateAccount).Methods("POST")
 	router.HandleFunc("/api/user/login", controllers.Authenticate).Methods("POST")
-	router.HandleFunc("api/server/new", controllers.CreateAvailServer).Methods("POST")
+	router.HandleFunc("/api/server/new/avail_server", controllers.CreateAvailServer).Methods("POST")
 	// router.HandleFunc("/api/server/new/server", controllers.GetServerValues).Methods("GET")
 	router.HandleFunc("/api/server/new/arma2", controllers.CreateArma2Server).Methods("POST")
 	router.HandleFunc("/api/server/new/arkpc", controllers.CreateArkPCServer).Methods("POST")
