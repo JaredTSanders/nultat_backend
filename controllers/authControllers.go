@@ -33,3 +33,7 @@ var Authenticate = func(w http.ResponseWriter, r *http.Request) {
 	resp := models.Login(account.Email, account.Password)
 	u.Respond(w, resp)
 }
+
+var Logout = func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(200)
+}

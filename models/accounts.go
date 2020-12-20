@@ -23,8 +23,10 @@ type Token struct {
 type Account struct {
 	gorm.Model
 	Email    string `json:"email"`
+	Status   string `json:"status"`
+	Standing string `json:"standing"`
 	Password string `json:"password"`
-	Token    string `json:"token"; sql:"-"`
+	Token    string `json:"token";sql:"-"`
 	Role     string `json:"role"`
 }
 
@@ -62,7 +64,9 @@ func (account *Account) Create() map[string]interface{} {
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(account.Password), bcrypt.DefaultCost)
 	account.Password = string(hashedPassword)
-
+	account.Role = "user"
+	account.Status = "active"
+	account.Standing = "good"
 	GetDB().Create(account)
 
 	if account.ID <= 0 {

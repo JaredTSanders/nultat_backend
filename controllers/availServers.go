@@ -23,3 +23,10 @@ var CreateAvailServer = func(w http.ResponseWriter, r *http.Request) {
 	resp := arma2Server.Create()
 	u.Respond(w, resp)
 }
+
+var GetAllAvailServers = func(w http.ResponseWriter, r *http.Request) {
+	data := models.GetAvailServers()
+	resp := u.Message(true, "success")
+	resp["data"] = data
+	u.Respond(w, resp)
+}

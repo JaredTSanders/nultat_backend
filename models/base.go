@@ -13,7 +13,7 @@ var db *gorm.DB
 
 func init() {
 
-	e := godotenv.Load()
+	e := godotenv.Load("../.env/.env")
 	if e != nil {
 		fmt.Print(e)
 	}
