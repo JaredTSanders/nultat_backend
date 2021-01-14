@@ -12,6 +12,7 @@ type MinecraftBRServer struct {
 	gorm.Model
 	Name   string `json:"name"`
 	UserId uint
+	Type   string `json: "type"`
 }
 
 func (minecraftBRServer *MinecraftBRServer) Validate() (map[string]interface{}, bool) {

@@ -10,28 +10,17 @@ import (
 
 type AssettoCCServer struct {
 	gorm.Model
-	UserId    uint
-	UserEmail string
-	UID       string
+	Name   string `json:"name"`
+	UserId uint
+	Type   string `json: "type"`
 }
 
 func (assettoCCServer *AssettoCCServer) Validate() (map[string]interface{}, bool) {
 
-	if assettoCCServer.UserId == 0 {
-		return u.Message(false, "User ID should be in the payload"), false
+	if assettoCCServer.Name == "" {
+		return u.Message(false, "Name should be in the payload"), false
 	}
 
-	if assettoCCServer.UserEmail == "" {
-		return u.Message(false, "User Email name should be in the payload"), false
-	}
-
-	if assettoCCServer.UID == "" {
-		return u.Message(false, "Server UID must be generated and sent in the payload"), false
-	}
-
-	if len(assettoCCServer.UID) < 36 || len(assettoCCServer.UID) > 36 {
-		return u.Message(false, "Invalid UID. Must be exactly 36 characters in length and formatted correctly"), false
-	}
 	// if assettoCCServer.Phone == "" {
 	// 	return u.Message(false, "Phone number should be on the payload"), false
 	// }

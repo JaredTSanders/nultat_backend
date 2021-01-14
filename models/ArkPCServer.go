@@ -12,6 +12,7 @@ type ArkPCServer struct {
 	gorm.Model
 	Name   string `json:"name"`
 	UserId uint
+	Type   string `json: "type"`
 }
 
 func (arkPCServer *ArkPCServer) Validate() (map[string]interface{}, bool) {

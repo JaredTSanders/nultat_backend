@@ -1,10 +1,14 @@
 package models
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	u "github.com/JaredTSanders/nultat_backend/utils"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
@@ -22,12 +26,16 @@ type Token struct {
 //a struct to rep user account
 type Account struct {
 	gorm.Model
-	Email    string `json:"email"`
-	Status   string `json:"status"`
-	Standing string `json:"standing"`
-	Password string `json:"password"`
-	Token    string `json:"token";sql:"-"`
-	Role     string `json:"role"`
+	FName       string `json:"first_name"`
+	LName       string `json:"last_name"`
+	Email       string `json:"email"`
+	Status      string `json:"status"`
+	Standing    string `json:"standing"`
+	Password    string `json:"password"`
+	Token       string `json:"token";sql:"-"`
+	Role        string `json:"role"`
+	MFA_Enabled string `json:"mfa_enabled"`
+	AccType     string `json:"account_type"`
 }
 
 //Validate incoming user details...
@@ -67,6 +75,7 @@ func (account *Account) Create() map[string]interface{} {
 	account.Role = "user"
 	account.Status = "active"
 	account.Standing = "good"
+	account.MFA_Enabled = "no"
 	GetDB().Create(account)
 
 	if account.ID <= 0 {
@@ -86,7 +95,7 @@ func (account *Account) Create() map[string]interface{} {
 	return response
 }
 
-func Login(email, password string) map[string]interface{} {
+func Login(email, password string, w http.ResponseWriter) map[string]interface{} {
 
 	account := &Account{}
 	err := GetDB().Table("accounts").Where("email = ?", email).First(account).Error
@@ -101,19 +110,88 @@ func Login(email, password string) map[string]interface{} {
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
 		return u.Message(false, "Invalid login credentials. Please try again")
 	}
+
+	sessionToken := uuid.NewV4().String()
+	_, err = Cache.Do("SETEX", sessionToken, "300", account.Email)
+
+	if err != nil {
+		return u.Message(false, "error setting cache")
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    sessionToken,
+		Expires:  time.Now().Add(300 * time.Second),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: 2,
+	})
+
 	//Worked! Logged In
 	account.Password = ""
 
 	//Create JWT token
-	tk := &Token{UserId: account.ID}
-	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), tk)
-	tokenString, _ := token.SignedString([]byte(os.Getenv("token_password")))
-	account.Token = tokenString //Store the token in the response
+	// tk := &Token{UserId: account.ID}
+	// token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), tk)
+	// tokenString, _ := token.SignedString([]byte(os.Getenv("token_password")))
+	// account.Token = tokenString //Store the token in the response
 
 	resp := u.Message(true, "Logged In")
-	resp["account"] = account
 	return resp
 }
+
+func Refresh(w http.ResponseWriter, r *http.Request) {
+	c, err := r.Cookie("session_token")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	sessionToken := c.Value
+
+	response, err := Cache.Do("GET", sessionToken)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if response == nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	newSessionToken := uuid.NewV4().String()
+	_, err = Cache.Do("SETEX", newSessionToken, "300", fmt.Sprintf("%s", response))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	_, err = Cache.Do("DEL", sessionToken)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    newSessionToken,
+		Expires:  time.Now().Add(300 * time.Second),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: 2,
+	})
+}
+
+// func GetCurrentUser(id uint) *BasicAccount {
+// 	account := &BasicAccount{}
+// 	err := GetDB().Table("accounts").Where("id = ?", id).First(account).Error
+// 	if err != nil {
+// 		return nil
+// 	}
+// 	return account
+// }
 
 func GetUser(u uint) *Account {
 
@@ -125,4 +203,33 @@ func GetUser(u uint) *Account {
 
 	acc.Password = ""
 	return acc
+}
+
+func GetUserByEmail(e string) *Account {
+	acc := &Account{}
+	GetDB().Table("accounts").Where("email = ? ", e).First(acc)
+	if acc.Email == "" { //User not found!
+		return nil
+	}
+	acc.Password = ""
+	return acc
+}
+
+func UpdateCurrentUser(account *Account) *Account {
+	// if resp, ok := account.Validate(); !ok {
+	// 	return resp
+	// }
+	return nil
+
+	// GetDB().Update(account)
+
+	// if account.ID <= 0 {
+	// 	return u.Message(false, "Failed to create account, connection error.")
+	// }
+
+	// account.Password = "" //delete password
+
+	// response := u.Message(true, "Account has been updated")
+	// response["account"] = account
+	// return response
 }

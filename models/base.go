@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joho/godotenv"
@@ -11,9 +12,11 @@ import (
 
 var db *gorm.DB
 
+var Cache redis.Conn
+
 func init() {
 
-	e := godotenv.Load("../.env/.env")
+	e := godotenv.Load(".env")
 	if e != nil {
 		fmt.Print(e)
 	}
@@ -32,9 +35,21 @@ func init() {
 	}
 
 	db = conn
-	db.Debug().AutoMigrate(&Account{}, &ArkPCServer{}, &MinecraftBRServer{}, &Arma2Server{}, &AssettoCCServer{}, &AvailServer{})
+	db.Debug().AutoMigrate(&Account{}, &AccountTypes{}, &ArkPCServer{}, &MinecraftBRServer{}, &Arma2Server{}, &AssettoCCServer{}, &AvailServer{})
+
+	initCache()
+
 }
 
 func GetDB() *gorm.DB {
 	return db
+}
+
+func initCache() {
+	conn, err := redis.DialURL("redis://10.10.30.30:6379")
+	if err != nil {
+		fmt.Print(err)
+	}
+	// conn.Do("AUTH", "S@tUrn")
+	Cache = conn
 }

@@ -12,6 +12,7 @@ type Arma2Server struct {
 	gorm.Model
 	Name   string `json:"name"`
 	UserId uint
+	Type   string `json: "type"`
 }
 
 func (arma2Server *Arma2Server) Validate() (map[string]interface{}, bool) {
