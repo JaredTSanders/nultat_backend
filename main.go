@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 
+    "github.com/honeycombio/beeline-go/wrappers/hnygorilla"
+	"github.com/honeycombio/beeline-go/wrappers/hnynethttp"
 	"github.com/JaredTSanders/nultat_backend/app"
 	"github.com/JaredTSanders/nultat_backend/controllers"
 	"github.com/gorilla/mux"
@@ -15,10 +17,13 @@ func main() {
 
 	/*
 	   =================
-	    Router and Redis initialization:
+	    Router initialization:
 	   =================
 	*/
 	router := mux.NewRouter()
+
+	router.Use(hnygorilla.Middleware)
+
 	/*
 	   =================
 	    GET endpoints:
@@ -76,6 +81,7 @@ func main() {
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 	})
 
-	log.Fatal(http.ListenAndServe(":8000", c.Handler(router)))
+	log.Fatal(http.ListenAndServe(":8000", c.Handler(hnynethttp.WrapHandler(router))))
 	// log.Fatal(http.ListenAndServe(":8000", handlers.CORS(handlers.AllowedHeaders([]string{"X-Requested-With", "Access-Control-Allow-Headers", "Origin", "Access-Control-Request-Headers", "credentials", "Content-Type", "content-Length", "Accept", "X-CSRF-Token", "Authorization"}), handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS"}), handlers.AllowedOrigins([]string{"http://localhost:4200"}))(router)))
 }
+

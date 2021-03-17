@@ -6,10 +6,13 @@ import (
 	"os"
 	"strings"
 	"time"
+	"errors"
 
 	u "github.com/JaredTSanders/nultat_backend/utils"
 	uuid "github.com/satori/go.uuid"
-
+	
+	"github.com/getsentry/sentry-go"
+    "github.com/honeycombio/libhoney-go"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
@@ -55,6 +58,7 @@ func (account *Account) Validate() (map[string]interface{}, bool) {
 	//check for errors and duplicate emails
 	err := GetDB().Table("accounts").Where("email = ?", account.Email).First(temp).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
+		sentry.CaptureMessage("Database connection failed")
 		return u.Message(false, "Connection error. Please retry"), false
 	}
 	if temp.Email != "" {
@@ -97,12 +101,24 @@ func (account *Account) Create() map[string]interface{} {
 
 func Login(email, password string, w http.ResponseWriter) map[string]interface{} {
 
+	start := time.Now()
+
+	params := map[string]interface{}{
+		"hostname": "api.jaredtsanders.com",
+		"built": false,
+		"user_id": -1,
+	}
+
 	account := &Account{}
 	err := GetDB().Table("accounts").Where("email = ?", email).First(account).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return u.Message(false, "Email address not found")
 		}
+		sentry.WithScope(func(scope *sentry.Scope){
+        	scope.SetLevel(sentry.LevelFatal)
+        	sentry.CaptureException(errors.New("Database connection failed, thrown in Login block"))
+        })
 		return u.Message(false, "Connection error. Please retry")
 	}
 
@@ -115,6 +131,10 @@ func Login(email, password string, w http.ResponseWriter) map[string]interface{}
 	_, err = Cache.Do("SETEX", sessionToken, "300", account.Email)
 
 	if err != nil {
+		sentry.WithScope(func(scope *sentry.Scope){
+        	scope.SetLevel(sentry.LevelFatal)
+        	sentry.CaptureException(errors.New("Redis SETEX failed, thrown in Login block"))
+        })
 		return u.Message(false, "error setting cache")
 	}
 
@@ -130,6 +150,7 @@ func Login(email, password string, w http.ResponseWriter) map[string]interface{}
 	//Worked! Logged In
 	account.Password = ""
 
+	
 	//Create JWT token
 	// tk := &Token{UserId: account.ID}
 	// token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), tk)
@@ -137,6 +158,25 @@ func Login(email, password string, w http.ResponseWriter) map[string]interface{}
 	// account.Token = tokenString //Store the token in the response
 
 	resp := u.Message(true, "Logged In")
+
+	libhoney.Add(params)
+
+	builder := libhoney.NewBuilder()
+
+	builder.AddField("built", true)
+
+	ev := builder.NewEvent()
+
+	t := time.Now()
+
+	elapsed := t.Sub(start)
+
+	ev.AddField("user_id", account.Email)
+	ev.AddField("latency_ms", elapsed)
+	ev.Timestamp = time.Now()
+
+    ev.Send()
+
 	return resp
 }
 
@@ -154,6 +194,10 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 
 	response, err := Cache.Do("GET", sessionToken)
 	if err != nil {
+		sentry.WithScope(func(scope *sentry.Scope){
+        	scope.SetLevel(sentry.LevelFatal)
+        	sentry.CaptureException(errors.New("Redis DEL failed, thrown in Refresh block"))
+        })
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -165,11 +209,20 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 	newSessionToken := uuid.NewV4().String()
 	_, err = Cache.Do("SETEX", newSessionToken, "300", fmt.Sprintf("%s", response))
 	if err != nil {
+		sentry.WithScope(func(scope *sentry.Scope){
+        	scope.SetLevel(sentry.LevelFatal)
+        	sentry.CaptureException(errors.New("Redis DEL failed, thrown in Refresh block"))
+        })
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	_, err = Cache.Do("DEL", sessionToken)
 	if err != nil {
+
+		sentry.WithScope(func(scope *sentry.Scope){
+        	scope.SetLevel(sentry.LevelFatal)
+        	sentry.CaptureException(errors.New("Redis DEL failed, thrown in Refresh block"))
+        })
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
