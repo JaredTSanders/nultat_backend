@@ -5,6 +5,8 @@ import (
 	// "fmt"
 	// "go/token"
 	"net/http"
+	"fmt"
+	// "io/ioutil"
 
 	"github.com/JaredTSanders/nultat_backend/models"
 	u "github.com/JaredTSanders/nultat_backend/utils"
@@ -15,6 +17,7 @@ var CreateAccount = func(w http.ResponseWriter, r *http.Request) {
 	account := &models.Account{}
 	err := json.NewDecoder(r.Body).Decode(account) //decode the request body into struct and failed if any error occur
 	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
 		u.Respond(w, u.Message(false, "Invalid request"))
 		return
 	}
@@ -24,10 +27,18 @@ var CreateAccount = func(w http.ResponseWriter, r *http.Request) {
 }
 
 var Authenticate = func(w http.ResponseWriter, r *http.Request) {
+	
+	// b, e := ioutil.ReadAll(r.Body)
+	// if e != nil {
+	//     panic(e)
+	// }
 
+	dbUri := fmt.Sprintf("host=%s url=%s proto=%s", r.Method, r.URL, r.Proto)
+	fmt.Println(dbUri)
 	account := &models.Account{}
 	err := json.NewDecoder(r.Body).Decode(account) //decode the request body into struct and failed if any error occur
 	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
 		u.Respond(w, u.Message(false, "Invalid request"))
 		return
 	}
