@@ -48,7 +48,7 @@ type Account struct {
 	Role        string `json:"role"`
 	MFA_Enabled string `json:"mfa_enabled"`
 	AccType     string `json:"account_type"`
-	NameSpace   string 
+	Namespace   string 
 }
 
 //Validate incoming user details...
@@ -84,6 +84,7 @@ func (account *Account) Create() map[string]interface{} {
 		return resp
 	}
 
+
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(account.Password), bcrypt.DefaultCost)
 	account.Password = string(hashedPassword)
 	account.Role = "user"
@@ -113,6 +114,12 @@ func (account *Account) Create() map[string]interface{} {
 		panic(err)
 	}
 
+	ns := "arkpc-" +fmt.Sprint(account.ID)
+
+	GetDB().Table("accounts").Where("email = ?", account.Email).First(account).Update("namespace", ns)
+
+	account.Namespace = ns
+
 	kubeclient := client.CoreV1().Namespaces()
 
 	// Create resource object
@@ -122,7 +129,7 @@ func (account *Account) Create() map[string]interface{} {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "blah",
+			Name: ns,
 		},
 		Spec: corev1.NamespaceSpec{},
 	}

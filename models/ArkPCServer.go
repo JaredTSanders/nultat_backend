@@ -273,17 +273,32 @@ func GetArkPCServerStatus(id uint) *ArkPCServer {
 	return arkPCServer
 } 
 
-func GetArkPCServers(user uint) []*ArkPCServer {
+// func GetArkPCServerShell(id uint) *ArkPCServer {
+// 	arkPCServer := &ArkPCServer{}
+// 	err := GetDB().Table("arkPCServers").Where("id = ?", id).First(arkPCServer).Error
+// 	if err != nil {
+// 		return nil
+// 	}
+// 	return arkPCServer
+// }
 
-	arkPCServers := make([]*ArkPCServer, 0)
-	err := GetDB().Table("arkPCServers").Where("user_id = ?", user).Find(&arkPCServers).Error
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
+// func SendArkPCServerShell(id uint)  *ArkPCServer {
+// 	arkPCServer := &ArkPCServer{}
+// 	err := err := GetDB().Table("arkPCServers").Where("id = ?", id).First(arkPCServer).Error
+	
+// }
 
-	return arkPCServers
-}
+// func GetArkPCServers(user uint) []*ArkPCServer {
+
+// 	arkPCServers := make([]*ArkPCServer, 0)
+// 	err := GetDB().Table("arkPCServers").Where("user_id = ?", user).Find(&arkPCServers).Error
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		return nil
+// 	}
+
+// 	return arkPCServers
+// }
 
 func int32Ptr(i int32) *int32 { return &i }
 
