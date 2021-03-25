@@ -36,6 +36,7 @@ type ArkPCServer struct {
 	AdminPass string `gorm:"-" ; json:"apass"`
 	Backup int `json:"backup"`
 	Update int `json: "update"`
+	Namespace string `json: "namespace"`
 }
 
 func (arkPCServer *ArkPCServer) Validate() (map[string]interface{}, bool) {
@@ -85,9 +86,9 @@ func (arkPCServer *ArkPCServer) Create() map[string]interface{} {
 	str := fmt.Sprint(arkPCServer.UserId)
 	fullName := strings.ToLower(arkPCServer.Name) + "-" +  str + "-" +  strings.ToLower(arkPCServer.MapName)
 
-	kubeclient := client.AppsV1().Deployments("default")
+	kubeclient := client.AppsV1().Deployments(arkPCServer.Namespace)
 
-	kc := client.CoreV1().PersistentVolumeClaims("default")
+	kc := client.CoreV1().PersistentVolumeClaims(arkPCServer.Namespace)
 
 
 	pvc := &corev1.PersistentVolumeClaim{
@@ -253,52 +254,6 @@ func (arkPCServer *ArkPCServer) Create() map[string]interface{} {
 	resp["arkPCServer"] = arkPCServer
 	return resp
 }
-
-func GetArkPCServer(id uint) *ArkPCServer {
-
-	arkPCServer := &ArkPCServer{}
-	err := GetDB().Table("arkPCServers").Where("id = ?", id).First(arkPCServer).Error
-	if err != nil {
-		return nil
-	}
-	return arkPCServer
-}
-
-func GetArkPCServerStatus(id uint) *ArkPCServer {
-	arkPCServer := &ArkPCServer{}
-	err := GetDB().Table("arkPCServers").Where("id = ?", id).First(arkPCServer).Error
-	if err != nil {
-		return nil
-	}
-	return arkPCServer
-} 
-
-// func GetArkPCServerShell(id uint) *ArkPCServer {
-// 	arkPCServer := &ArkPCServer{}
-// 	err := GetDB().Table("arkPCServers").Where("id = ?", id).First(arkPCServer).Error
-// 	if err != nil {
-// 		return nil
-// 	}
-// 	return arkPCServer
-// }
-
-// func SendArkPCServerShell(id uint)  *ArkPCServer {
-// 	arkPCServer := &ArkPCServer{}
-// 	err := err := GetDB().Table("arkPCServers").Where("id = ?", id).First(arkPCServer).Error
-	
-// }
-
-// func GetArkPCServers(user uint) []*ArkPCServer {
-
-// 	arkPCServers := make([]*ArkPCServer, 0)
-// 	err := GetDB().Table("arkPCServers").Where("user_id = ?", user).Find(&arkPCServers).Error
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return nil
-// 	}
-
-// 	return arkPCServers
-// }
 
 func int32Ptr(i int32) *int32 { return &i }
 

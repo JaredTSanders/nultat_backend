@@ -38,6 +38,7 @@ func main() {
 	router.HandleFunc("/api/types/me", controllers.GetCurrentAccountType).Methods("GET")
 	router.HandleFunc("/api/types/all", controllers.GetAllAccountTypes).Methods("GET")
 	router.HandleFunc("/api/user/me/status", controllers.GetUserLoginStatus).Methods("GET")
+	router.HandleFunc("/api/server/logs", controllers.GetPodLogs).Methods("GET")
 	/*
 	   =================
 	    POST endpoints:

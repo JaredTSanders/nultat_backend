@@ -139,7 +139,7 @@ func (account *Account) Create() map[string]interface{} {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Namespace Created successfully!")
+	fmt.Println("Namespace " + ns + " created successfully!")
 
 	// nameSpace := 
 
@@ -188,7 +188,7 @@ func Login(email, password string, w http.ResponseWriter) map[string]interface{}
 	}
 
 	sessionToken := uuid.NewV4().String()
-	_, err = Cache.Do("SETEX", sessionToken, "300", account.Email)
+	_, err = Cache.Do("SETEX", sessionToken, "3000", account.Email)
 
 	if err != nil {
 		sentry.WithScope(func(scope *sentry.Scope){
@@ -202,7 +202,7 @@ func Login(email, password string, w http.ResponseWriter) map[string]interface{}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
 		Value:    sessionToken,
-		Expires:  time.Now().Add(300 * time.Second),
+		Expires:  time.Now().Add(3000 * time.Second),
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: 2,
