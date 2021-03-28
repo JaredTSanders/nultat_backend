@@ -52,6 +52,7 @@ func main() {
 	router.HandleFunc("/api/server/new/arkpc", controllers.CreateArkPCServer).Methods("POST")
 	router.HandleFunc("/api/server/new/assettocc", controllers.CreateAssettoCCServer).Methods("POST")
 	router.HandleFunc("/api/server/new/minecraftbr", controllers.CreateMinecraftBRServer).Methods("POST")
+	router.HandleFunc("/api/server/arkpc/command", controllers.SendCommand).Methods("POST")
 	// router.HandleFun("/api/auth/validate", controllers.ValidateToken).Methods("POST")
 	// router.HandleFunc("/api/server/new/minecraftbr", controllers.CreateMinecraftVanillaServer).Methods("POST")
 
