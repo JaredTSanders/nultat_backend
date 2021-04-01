@@ -3,7 +3,7 @@ package models
 import (
 	"fmt"
 	"net/http"
-	"os"
+	"context"
 	"strings"
 	"time"
 	"errors"
@@ -16,6 +16,15 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
+	"k8s.io/client-go/tools/clientcmd"
+
+
+	// appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	// "k8s.io/kubernetes/pkg/api/v1"
+
+	"k8s.io/client-go/kubernetes"
 )
 
 /*
@@ -35,10 +44,11 @@ type Account struct {
 	Status      string `json:"status"`
 	Standing    string `json:"standing"`
 	Password    string `json:"password"`
-	Token       string `json:"token";sql:"-"`
+	Token       string `gorm:"-" ; json:"token"`
 	Role        string `json:"role"`
 	MFA_Enabled string `json:"mfa_enabled"`
 	AccType     string `json:"account_type"`
+	Namespace   string 
 }
 
 //Validate incoming user details...
@@ -74,6 +84,7 @@ func (account *Account) Create() map[string]interface{} {
 		return resp
 	}
 
+
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(account.Password), bcrypt.DefaultCost)
 	account.Password = string(hashedPassword)
 	account.Role = "user"
@@ -86,11 +97,58 @@ func (account *Account) Create() map[string]interface{} {
 		return u.Message(false, "Failed to create account, connection error.")
 	}
 
+	config, err := clientcmd.BuildConfigFromFlags("", *Kubeconfig)
+	if err != nil {
+		sentry.WithScope(func(scope *sentry.Scope){
+        	scope.SetLevel(sentry.LevelFatal)
+        	sentry.CaptureException(errors.New("Kubeconfig not found, thrown in BuildConfigFromFlags in accounts.go"))
+        })
+		panic(err)
+	}
+	client, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		sentry.WithScope(func(scope *sentry.Scope){
+        	scope.SetLevel(sentry.LevelFatal)
+        	sentry.CaptureException(errors.New("Kubeconfig error, thrown in in NewForConfig in accounts.go"))
+        })
+		panic(err)
+	}
+
+	ns := "arkpc-" +fmt.Sprint(account.ID)
+
+	GetDB().Table("accounts").Where("email = ?", account.Email).First(account).Update("namespace", ns)
+
+	account.Namespace = ns
+
+	kubeclient := client.CoreV1().Namespaces()
+
+	// Create resource object
+	object := &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Namespace",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: ns,
+		},
+		Spec: corev1.NamespaceSpec{},
+	}
+
+	// Manage resource
+	_, err = kubeclient.Create(context.TODO(), object, metav1.CreateOptions{})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Namespace " + ns + " created successfully!")
+
+	// nameSpace := 
+
+
 	//Create new JWT token for the newly registered account
-	tk := &Token{UserId: account.ID}
-	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), tk)
-	tokenString, _ := token.SignedString([]byte(os.Getenv("token_password")))
-	account.Token = tokenString
+	// tk := &Token{UserId: account.ID}
+	// token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), tk)
+	// tokenString, _ := token.SignedString([]byte(os.Getenv("token_password")))
+	// account.Token = tokenString
 
 	account.Password = "" //delete password
 
@@ -101,6 +159,7 @@ func (account *Account) Create() map[string]interface{} {
 
 func Login(email, password string, w http.ResponseWriter) map[string]interface{} {
 
+	
 	start := time.Now()
 
 	params := map[string]interface{}{
@@ -113,6 +172,7 @@ func Login(email, password string, w http.ResponseWriter) map[string]interface{}
 	err := GetDB().Table("accounts").Where("email = ?", email).First(account).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
+			w.WriteHeader(http.StatusUnauthorized)
 			return u.Message(false, "Email address not found")
 		}
 		sentry.WithScope(func(scope *sentry.Scope){
@@ -124,11 +184,12 @@ func Login(email, password string, w http.ResponseWriter) map[string]interface{}
 
 	err = bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(password))
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
+		w.WriteHeader(http.StatusUnauthorized)
 		return u.Message(false, "Invalid login credentials. Please try again")
 	}
 
 	sessionToken := uuid.NewV4().String()
-	_, err = Cache.Do("SETEX", sessionToken, "300", account.Email)
+	_, err = Cache.Do("SETEX", sessionToken, "3000", account.Email)
 
 	if err != nil {
 		sentry.WithScope(func(scope *sentry.Scope){
@@ -138,10 +199,11 @@ func Login(email, password string, w http.ResponseWriter) map[string]interface{}
 		return u.Message(false, "error setting cache")
 	}
 
+	
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
 		Value:    sessionToken,
-		Expires:  time.Now().Add(300 * time.Second),
+		Expires:  time.Now().Add(3000 * time.Second),
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: 2,

@@ -31,7 +31,6 @@ func GetAllUsers() []*BasicAccount {
 
 func GetCurrentUser(email string) *BasicAccount {
 	account := &BasicAccount{}
-	fmt.Println("EMAIL HERE", email)
 	err := GetDB().Table("accounts").Where("email = ?", email).First(account).Error
 	if err != nil {
 		return nil
