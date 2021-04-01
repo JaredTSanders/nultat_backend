@@ -184,6 +184,7 @@ func Login(email, password string, w http.ResponseWriter) map[string]interface{}
 
 	err = bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(password))
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
+		w.WriteHeader(http.StatusUnauthorized)
 		return u.Message(false, "Invalid login credentials. Please try again")
 	}
 

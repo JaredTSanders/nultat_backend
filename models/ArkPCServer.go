@@ -104,7 +104,8 @@ func (arkPCServer *ArkPCServer) Create() map[string]interface{} {
 			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					"storage": *resource.NewQuantity(104857600, resource.BinarySI),
+					"storage": resource.MustParse("10Gi"),
+					// "storage": *resource.NewQuantity(104857600, resource.BinarySI),
 				},
 			},
 			StorageClassName: ptrstring("longhorn"),
