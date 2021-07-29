@@ -6,7 +6,6 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/engineerd/kube-exec v0.0.0-20190218153858-b4411f22744a
 	github.com/getsentry/sentry-go v0.10.0
-	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/gomodule/redigo v1.8.3
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -19,9 +18,6 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
-	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b // indirect
-	golang.org/x/sys v0.0.0-20201112073958-5cba982894dd // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	k8s.io/api v0.20.4
 	k8s.io/apimachinery v0.20.4
