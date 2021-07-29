@@ -22,11 +22,6 @@ pipeline {
                 sh "curl -s https://codecov.io/bash | bash -s -"
             }
         }
-        stage('Code Analysis') {
-            steps {
-                sh 'golangci-lint run'
-            }
-        }
         stage('Release') {
             when {
                 buildingTag()
