@@ -5,6 +5,7 @@ pipeline {
     }
     environment {
         GO111MODULE = 'on'
+        CGO_ENABLED=0
     }
    stages {
         stage('Compile') {
